@@ -1,0 +1,30 @@
+# 海底观测阵列翻转通道联合归因 —— Compose 编排
+#
+# 可配置端口：
+#   WEB_PORT=9090 docker compose up
+# 默认 8080。web 站点自带健康检查；verify 为一次性服务，
+# 待站点健康后依次执行 测试 → 构建 → 归因模块冒烟，并以退出码报告。
+
+services:
+  web:
+    build:
+      context: .
+      target: web
+    image: seabed-array-web:latest
+    environment:
+      WEB_PORT: ${WEB_PORT:-8080}
+    ports:
+      - "127.0.0.1:${WEB_PORT:-8080}:${WEB_PORT:-8080}"
+    restart: unless-stopped
+
+  verify:
+    build:
+      context: .
+      target: verify
+    image: seabed-array-verify:latest
+    depends_on:
+      web:
+        condition: service_healthy
+    environment:
+      WEB_URL: http://web:${WEB_PORT:-8080}/healthz
+    restart: no
