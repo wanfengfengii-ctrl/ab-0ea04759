@@ -1,5 +1,7 @@
 .DS_Store
 .env
+dist/
+coverage/
 .venv/
 venv/
 node_modules/

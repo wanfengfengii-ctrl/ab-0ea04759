@@ -1,0 +1,28 @@
+services:
+  # 站点：nginx 托管前端静态产物，端口通过 WEB_PORT 可配置发布
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: web
+    image: subsea-array-diagnosis:web
+    container_name: subsea-array-diagnosis-web
+    ports:
+      # 宿主机端口由环境变量 WEB_PORT 决定，默认 8080；容器内固定 80
+      - "${WEB_PORT:-8080}:80"
+    restart: unless-stopped
+    # 健康检查继承自 Dockerfile 中的 HEALTHCHECK（GET /healthz）
+
+  # 一次性校验服务：站点健康后依次执行单元测试、生产构建、归因模块冒烟，
+  # 以退出码报告（全过为 0），随后退出，不常驻。
+  verify:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: verify
+    image: subsea-array-diagnosis:verify
+    container_name: subsea-array-diagnosis-verify
+    depends_on:
+      web:
+        condition: service_healthy
+    restart: "no"
